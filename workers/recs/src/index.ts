@@ -12,6 +12,8 @@
 //   - ステートレス: 閲覧履歴は端末が毎回送る。サーバはユーザー状態を一切持たない
 //   - 失敗時はアプリ側が端末内リランクへ縮退するため、ここでは素直にエラーを返す
 
+import { handleMatsuriList, updateMatsuri } from './matsuri';
+
 export interface Env {
   AI: Ai;
   VECTORIZE: VectorizeIndex;
@@ -38,7 +40,7 @@ const RECENCY_DECAY = 0.9;
 // relatedでの「今読んでいる記事」と「ユーザー嗜好」の配合
 const RELATED_ARTICLE_WEIGHT = 0.7;
 
-interface ApiArticle {
+export interface ApiArticle {
   id: string;
   titles: string;
   url: string;
@@ -67,6 +69,14 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
     const url = new URL(request.url);
+    if (request.method === 'GET' && url.pathname === '/recs/matsuri') {
+      try {
+        return await handleMatsuriList(env);
+      } catch (error) {
+        console.error('matsuri list error:', error);
+        return json({ error: 'internal error' }, 500);
+      }
+    }
     if (request.method !== 'POST') {
       return json({ error: 'method not allowed' }, 405);
     }
@@ -149,6 +159,13 @@ async function ingest(env: Env): Promise<number> {
     },
   }));
   await env.VECTORIZE.upsert(vectors);
+
+  try {
+    // 祭り検知(同一トピックのクラスタリング)。失敗しても取り込みは止めない
+    await updateMatsuri(env, fresh, embeddings);
+  } catch (error) {
+    console.error('matsuri update failed:', error);
+  }
 
   const newest = fresh.reduce((max, a) => (a.publishedAt > max ? a.publishedAt : max), lastIngested);
   await env.KV.put('lastPublishedAt', newest);
