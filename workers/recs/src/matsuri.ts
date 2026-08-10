@@ -18,12 +18,13 @@ const SIMILARITY_THRESHOLD = 0.9;
 // 祭りは数時間スケールの現象。このウィンドウ内の記事同士だけを比較する
 const RECENT_WINDOW_MS = 6 * 60 * 60 * 1000;
 // 異なるサイト数がこの値に達したら「祭り」(🔥バッジと /recs/matsuri の掲載基準)
-export const MATSURI_SITE_COUNT = 3;
-// push通知を送る基準。アプリ内での発見(バッジ・読み比べ)より厳しくする:
-// 通知は割り込みなので、本当に大きく広がった話題だけに絞る
+export const MATSURI_SITE_COUNT = 5;
+// push通知を送る基準。掲載基準とは別の判断(割り込んでよい話題か)なので定数を分けてある。
+// 現在は同値だが、通知だけ絞りたくなったらこちらを上げる
 const NOTIFY_SITE_COUNT = 5;
-// 通知の頻度制御(鬱陶しさ対策): 同一クラスタ1回・1日最大2件・深夜帯は送らない
-const NOTIFY_DAILY_LIMIT = 2;
+// 通知の頻度制御(鬱陶しさ対策): 同一クラスタ1回・1日最大1件・深夜帯は送らない。
+// digest 2件と合わせて日3通が上限
+const NOTIFY_DAILY_LIMIT = 1;
 const QUIET_HOURS_JST = { start: 23, end: 7 };
 const CLUSTER_TTL_SECONDS = 48 * 60 * 60;
 // /recs/matsuri で返すアクティブ祭りの鮮度と件数
