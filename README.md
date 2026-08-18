@@ -10,6 +10,24 @@
 - セットアップ・デプロイ・カットオーバー手順: **[iac/README.md](iac/README.md)**
 - 日常デプロイ: `./iac/deploy-app.sh ubuntu@141.147.165.70`(Macからクロスコンパイル→scp→restart)
 
+### ⚠️ 旧GCP VM(34.173.153.190 系)は本番ではない
+
+2026-08-08 のOCI移行後も旧VM `34.173.153.189`(GCP・Ubuntu 18.04・docker-compose)が
+**稼働したまま**で、DBにも同じデータが入っている。さらにそのVM上の
+`~/news-app-docker/DEPLOY-2026-08.md` は移行前の手順書で、読むと旧VMが本番に見える。
+
+2026-08-18 に実際に取り違えが起きた(旧VMのDBを更新し、旧VMにデプロイしてしまった)。
+本番に影響は出なかったが、作業前に必ず次のどれかで確認すること:
+
+```bash
+# 本番オリジンの判定(どちらもOCIのIPが返るのが正)
+dig +short matome.folks-chat.com          # Cloudflare Proxied なのでCFのIPが返る点に注意
+curl -s https://matome.folks-chat.com/v1/site | python3 -c "import sys,json;print(len(json.load(sys.stdin)['data']))"
+# ↑ 変更が反映されるのは本番だけ。旧VMを触っても公開側の値は変わらない
+```
+
+**本番は OCI `ubuntu@141.147.165.70` のみ。** 日常デプロイは `./iac/deploy-app.sh ubuntu@141.147.165.70`。
+
 ## DNS インベントリ(Cloudflare)
 
 2026-08-08 の切替時に、matome ではなく **apex(別プロジェクトのえびてんチャット)** を誤って
