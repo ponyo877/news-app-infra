@@ -28,6 +28,30 @@ curl -s https://matome.folks-chat.com/v1/site | python3 -c "import sys,json;prin
 
 **本番は OCI `ubuntu@141.147.165.70` のみ。** 日常デプロイは `./iac/deploy-app.sh ubuntu@141.147.165.70`。
 
+#### 2026-08-21 の再確認と、旧VMの扱い
+
+判別に使える一番確実な差分が見つかった。`/app-ads.txt` は OCI の nginx にしか
+`location` を足していないため、**旧VMだけが404を返す**。
+
+| | `/app-ads.txt` |
+|---|---|
+| `https://matome.folks-chat.com`(本番) | **200** |
+| `http://141.147.165.70`(OCI) | **200** |
+| `http://34.173.153.189`(旧GCP) | **404** |
+
+→ Cloudflare のオリジンは OCI で確定。旧VMは本番ではない。
+
+旧VMに依存しているものも無い。旧Flutter版(`flutter-legacy` ブランチ)の接続先も
+`https://matome.folks-chat.com` であって、生IPを直接叩いているクライアントは存在しない。
+
+インスタンスは `news-app-image-20250226-035754`(us-central1-a・e2-micro)で **RUNNING のまま**。
+e2-micro 自体は無料枠の範囲だが、外部IPの分は課金される。
+
+**推奨: 削除ではなく停止(`gcloud compute instances stop`)。**
+ディスクは残るので戻せる一方、「間違って旧VMにデプロイする」事故の余地が消える。
+2026-08-18 に実際に起きた取り違えは、旧VMが起動しているかぎり何度でも起こりうる。
+停止は未実施(本番相当の判断のため)。
+
 ## DNS インベントリ(Cloudflare)
 
 2026-08-08 の切替時に、matome ではなく **apex(別プロジェクトのえびてんチャット)** を誤って
